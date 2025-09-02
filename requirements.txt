@@ -1,0 +1,9 @@
+# GSE POD Resolver - Dependencies
+# ===============================
+
+# HTTP requests library (unica dipendenza esterna)
+requests>=2.31.0
+
+# Note: Tutti gli altri moduli sono built-in di Python:
+# - json, typing, dataclasses, logging, re
+# - urllib (alternativa a requests se necessario)

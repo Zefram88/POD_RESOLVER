@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GSE POD Resolver - Risoluzione POD tramite servizi GSE diretti">
+    <meta name="author" content="GSE POD Resolver">
+    <title>GSE POD Resolver - Servizi Diretti</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .input-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .input-group input.error {
+            border-color: #dc3545;
+        }
+        
+        .search-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .search-btn:active {
+            transform: translateY(0);
+        }
+        
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            padding: 30px;
+        }
+        
+        .result-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .result-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .result-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .result-field:last-child {
+            border-bottom: none;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            color: #5f6368;
+            min-width: 120px;
+        }
+        
+        .field-value {
+            color: #202124;
+            text-align: right;
+            flex: 1;
+            margin-left: 20px;
+            word-break: break-word;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .validation-error {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .input-section,
+            .results-section {
+                padding: 20px;
+            }
+            
+            .result-field {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .field-value {
+                text-align: left;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 GSE POD Resolver</h1>
+        </div>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="podInput">Codice POD:</label>
+                <input type="text" id="podInput" placeholder="Es: IT001E12345678" maxlength="20">
+                <div class="validation-error" id="validationError"></div>
+            </div>
+            <button class="search-btn" id="searchBtn" onclick="resolvePOD()">🔍 Risolvi POD</button>
+        </div>
+        
+        <div class="loading" id="loading" style="display: none;">
+            🔄 Ricerca in corso...
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+        </div>
+    </div>
+
+    <script>
+        class GSEArcGISAdapter {
+            constructor() {
+                this.baseUrl = 'https://mappe.gse.it/srvf/rest/services';
+            }
+
+            async resolvePOD(podCode) {
+                try {
+                    // 1. Trova AC per il POD
+                    const acInfo = await this.findACForPOD(podCode);
+                    if (!acInfo) {
+                        throw new Error('AC non trovato per questo POD');
+                    }
+                    
+                    // 2. Ottieni informazioni geografiche dall'AC
+                    const geographicInfo = await this.getGeographicInfoFromAC(acInfo.COD_AC);
+                    
+                    return {
+                        POD: podCode,
+                        'Cabina Primaria': acInfo.COD_AC,
+                        'Fornitore': geographicInfo.fornitore,
+                        'Regioni': geographicInfo.regioni,
+                        'Province': geographicInfo.province,
+                        'Elenco Comuni Cabina Primaria': geographicInfo.comuni
+                    };
+                    
+                } catch (error) {
+                    throw error;
+                }
+            }
+
+            async findACForPOD(podCode) {
+                const url = `${this.baseUrl}/TIAD2/POD_AC/FeatureServer/12/query`;
+                const params = new URLSearchParams({
+                    where: `COD_POD='${podCode}'`,
+                    outFields: 'COD_POD,COD_AC',
+                    f: 'json'
+                });
+
+                const response = await fetch(`${url}?${params}`);
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                if (data.features && data.features.length > 0) {
+                    return data.features[0].attributes;
+                }
+                return null;
+            }
+
+            async getGeographicInfoFromAC(acCode) {
+                try {
+                    // 1. Ottieni geometria AC e fornitore
+                    const acInfo = await this.getACInfo(acCode);
+                    if (!acInfo) {
+                        throw new Error('Informazioni AC non trovate');
+                    }
+                    
+                    // 2. Trova comuni che intersecano l'AC
+                    const comuni = await this.findComuniIntersectingAC(acInfo.geometry);
+                    
+                    if (!comuni || comuni.length === 0) {
+                        throw new Error('Nessun comune trovato per questo AC');
+                    }
+                    
+                    // 3. Estrai tutte le regioni e province uniche dai comuni
+                    const regioniUniche = [...new Set(comuni.map(c => c.COD_REG))];
+                    const provinceUniche = [...new Set(comuni.map(c => c.COD_PROV))];
+                    
+                    // Traduci in nomi completi
+                    const nomiRegioni = await Promise.all(regioniUniche.map(cod => this.getRegioneName(cod)));
+                    const nomiProvince = await Promise.all(provinceUniche.map(cod => this.getProvinciaName(cod)));
+                    
+                    return {
+                        fornitore: acInfo.fornitore,
+                        regioni: nomiRegioni.join(', '),
+                        province: nomiProvince.join(', '),
+                        comuni: comuni.map(c => c.COMUNE).join(', ')
+                    };
+                    
+                } catch (error) {
+                    throw error;
+                }
+            }
+
+            async getACInfo(acCode) {
+                const url = `${this.baseUrl}/TIAD2/Aree_Convenzionali/FeatureServer/0/query`;
+                const params = new URLSearchParams({
+                    where: `COD_AC='${acCode}'`,
+                    outFields: 'COD_AC,RAG_SOC',
+                    returnGeometry: 'true',
+                    f: 'json'
+                });
+
+                const response = await fetch(`${url}?${params}`);
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                if (data.features && data.features.length > 0) {
+                    const feature = data.features[0];
+                    return {
+                        geometry: feature.geometry,
+                        fornitore: feature.attributes.RAG_SOC || 'Non specificato'
+                    };
+                }
+                return null;
+            }
+
+            async findComuniIntersectingAC(acGeometry) {
+                const url = `${this.baseUrl}/TIAD2/Comuni/FeatureServer/10/query`;
+                
+                // Crea una geometria semplificata per la query spaziale
+                const simplifiedGeometry = {
+                    rings: acGeometry.rings,
+                    spatialReference: acGeometry.spatialReference
+                };
+                
+                const spatialQuery = {
+                    geometry: JSON.stringify(simplifiedGeometry),
+                    geometryType: 'esriGeometryPolygon',
+                    spatialRel: 'esriSpatialRelIntersects',
+                    outFields: 'COMUNE,COD_REG,COD_PROV',
+                    f: 'json'
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(spatialQuery)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Errore query spaziale: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.features && data.features.length > 0) {
+                    return data.features.map(f => f.attributes);
+                }
+                return [];
+            }
+
+            async getRegioneName(codReg) {
+                const regioniMap = {
+                    '01': 'Piemonte', '02': 'Valle d\'Aosta', '03': 'Lombardia', '04': 'Trentino-Alto Adige',
+                    '05': 'Veneto', '06': 'Friuli-Venezia Giulia', '07': 'Liguria', '08': 'Emilia-Romagna',
+                    '09': 'Toscana', '10': 'Umbria', '11': 'Marche', '12': 'Lazio', '13': 'Abruzzo',
+                    '14': 'Molise', '15': 'Campania', '16': 'Puglia', '17': 'Basilicata',
+                    '18': 'Calabria', '19': 'Sicilia', '20': 'Sardegna',
+                    1: 'Piemonte', 2: 'Valle d\'Aosta', 3: 'Lombardia', 4: 'Trentino-Alto Adige',
+                    5: 'Veneto', 6: 'Friuli-Venezia Giulia', 7: 'Liguria', 8: 'Emilia-Romagna',
+                    9: 'Toscana', 10: 'Umbria', 11: 'Marche', 12: 'Lazio', 13: 'Abruzzo',
+                    14: 'Molise', 15: 'Campania', 16: 'Puglia', 17: 'Basilicata',
+                    18: 'Calabria', 19: 'Sicilia', 20: 'Sardegna'
+                };
+                return regioniMap[codReg] || `Regione ${codReg}`;
+            }
+
+            async getProvinciaName(codProv) {
+                const provinceMap = {
+                    '001': 'Torino', '002': 'Vercelli', '003': 'Novara', '004': 'Cuneo', '005': 'Asti',
+                    '006': 'Alessandria', '007': 'Valle d\'Aosta/Vallée d\'Aoste', '008': 'Imperia', '009': 'Savona',
+                    '010': 'Genova', '011': 'La Spezia', '012': 'Varese', '013': 'Como', '014': 'Sondrio',
+                    '015': 'Milano', '016': 'Bergamo', '017': 'Brescia', '018': 'Pavia', '019': 'Cremona',
+                    '020': 'Mantova', '021': 'Bolzano/Bozen', '022': 'Trento', '023': 'Verona', '024': 'Vicenza',
+                    '025': 'Belluno', '026': 'Treviso', '027': 'Venezia', '028': 'Padova', '029': 'Rovigo',
+                    '030': 'Udine', '031': 'Gorizia', '032': 'Trieste', '033': 'Piacenza', '034': 'Parma',
+                    '035': 'Reggio nell\'Emilia', '036': 'Modena', '037': 'Bologna', '038': 'Ferrara', '039': 'Ravenna',
+                    '040': 'Forlì-Cesena', '041': 'Pesaro e Urbino', '042': 'Ancona', '043': 'Macerata', '044': 'Ascoli Piceno',
+                    '045': 'Massa-Carrara', '046': 'Lucca', '047': 'Pistoia', '048': 'Firenze', '049': 'Livorno',
+                    '050': 'Pisa', '051': 'Arezzo', '052': 'Siena', '053': 'Grosseto', '054': 'Perugia',
+                    '055': 'Terni', '056': 'Viterbo', '057': 'Rieti', '058': 'Roma', '059': 'Latina',
+                    '060': 'Frosinone', '061': 'Caserta', '062': 'Benevento', '063': 'Napoli', '064': 'Avellino',
+                    '065': 'Salerno', '066': 'L\'Aquila', '067': 'Teramo', '068': 'Pescara', '069': 'Chieti',
+                    '070': 'Campobasso', '071': 'Foggia', '072': 'Bari', '073': 'Taranto', '074': 'Brindisi',
+                    '075': 'Lecce', '076': 'Potenza', '077': 'Matera', '078': 'Cosenza', '079': 'Catanzaro',
+                    '080': 'Reggio Calabria', '081': 'Trapani', '082': 'Palermo', '083': 'Messina', '084': 'Agrigento',
+                    '085': 'Caltanissetta', '086': 'Enna', '087': 'Catania', '088': 'Ragusa', '089': 'Siracusa',
+                    '090': 'Sassari', '091': 'Nuoro', '092': 'Cagliari', '093': 'Pordenone', '094': 'Isernia',
+                    '095': 'Oristano', '096': 'Biella', '097': 'Lecco', '098': 'Lodi', '099': 'Rimini',
+                    '100': 'Prato', '101': 'Crotone', '102': 'Vibo Valentia', '103': 'Verbano-Cusio-Ossola',
+                    '108': 'Monza e della Brianza', '109': 'Fermo', '110': 'Barletta-Andria-Trani', '111': 'Sud Sardegna',
+                    1: 'Torino', 2: 'Vercelli', 3: 'Novara', 4: 'Cuneo', 5: 'Asti',
+                    6: 'Alessandria', 7: 'Valle d\'Aosta/Vallée d\'Aoste', 8: 'Imperia', 9: 'Savona',
+                    10: 'Genova', 11: 'La Spezia', 12: 'Varese', 13: 'Como', 14: 'Sondrio',
+                    15: 'Milano', 16: 'Bergamo', 17: 'Brescia', 18: 'Pavia', 19: 'Cremona',
+                    20: 'Mantova', 21: 'Bolzano/Bozen', 22: 'Trento', 23: 'Verona', 24: 'Vicenza',
+                    25: 'Belluno', 26: 'Treviso', 27: 'Venezia', 28: 'Padova', 29: 'Rovigo',
+                    30: 'Udine', 31: 'Gorizia', 32: 'Trieste', 33: 'Piacenza', 34: 'Parma',
+                    35: 'Reggio nell\'Emilia', 36: 'Modena', 37: 'Bologna', 38: 'Ferrara', 39: 'Ravenna',
+                    40: 'Forlì-Cesena', 41: 'Pesaro e Urbino', 42: 'Ancona', 43: 'Macerata', 44: 'Ascoli Piceno',
+                    45: 'Massa-Carrara', 46: 'Lucca', 47: 'Pistoia', 48: 'Firenze', 49: 'Livorno',
+                    50: 'Pisa', 51: 'Arezzo', 52: 'Siena', 53: 'Grosseto', 54: 'Perugia',
+                    55: 'Terni', 56: 'Viterbo', 57: 'Rieti', 58: 'Roma', 59: 'Latina',
+                    60: 'Frosinone', 61: 'Caserta', 62: 'Benevento', 63: 'Napoli', 64: 'Avellino',
+                    65: 'Salerno', 66: 'L\'Aquila', 67: 'Teramo', 68: 'Pescara', 69: 'Chieti',
+                    70: 'Campobasso', 71: 'Foggia', 72: 'Bari', 73: 'Taranto', 74: 'Brindisi',
+                    75: 'Lecce', 76: 'Potenza', 77: 'Matera', 78: 'Cosenza', 79: 'Catanzaro',
+                    80: 'Reggio Calabria', 81: 'Trapani', 82: 'Palermo', 83: 'Messina', 84: 'Agrigento',
+                    85: 'Caltanissetta', 86: 'Enna', 87: 'Catania', 88: 'Ragusa', 89: 'Siracusa',
+                    90: 'Sassari', 91: 'Nuoro', 92: 'Cagliari', 93: 'Pordenone', 94: 'Isernia',
+                    95: 'Oristano', 96: 'Biella', 97: 'Lecco', 98: 'Lodi', 99: 'Rimini',
+                    100: 'Prato', 101: 'Crotone', 102: 'Vibo Valentia', 103: 'Verbano-Cusio-Ossola',
+                    108: 'Monza e della Brianza', 109: 'Fermo', 110: 'Barletta-Andria-Trani', 111: 'Sud Sardegna'
+                };
+                return provinceMap[codProv] || `Provincia ${codProv}`;
+            }
+        }
+
+        const adapter = new GSEArcGISAdapter();
+
+        function validatePOD(podCode) {
+            const podRegex = /^IT\d{3}E\d{8}$/;
+            return podRegex.test(podCode);
+        }
+
+        function showValidationError(message) {
+            const validationError = document.getElementById('validationError');
+            const podInput = document.getElementById('podInput');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            validationError.textContent = message;
+            validationError.style.display = 'block';
+            podInput.classList.add('error');
+            searchBtn.disabled = true;
+        }
+
+        function clearValidationError() {
+            const validationError = document.getElementById('validationError');
+            const podInput = document.getElementById('podInput');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            validationError.style.display = 'none';
+            podInput.classList.remove('error');
+            searchBtn.disabled = false;
+        }
+
+        async function resolvePOD() {
+            const podInput = document.getElementById('podInput');
+            const podCode = podInput.value.trim();
+            const resultsSection = document.getElementById('resultsSection');
+            const loading = document.getElementById('loading');
+
+            if (!podCode) {
+                showValidationError('Inserisci un codice POD valido');
+                return;
+            }
+
+            if (!validatePOD(podCode)) {
+                showValidationError('Formato POD non valido. Esempio: IT001E12345678');
+                return;
+            }
+
+            clearValidationError();
+
+            // Pulisci risultati precedenti e mostra loading
+            resultsSection.innerHTML = '';
+            loading.style.display = 'block';
+
+            try {
+                const result = await adapter.resolvePOD(podCode);
+                displayResult(result);
+            } catch (error) {
+                showError(`Errore nella risoluzione: ${error.message}`);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResult(result) {
+            const resultsSection = document.getElementById('resultsSection');
+            
+            // Pulisci completamente la sezione risultati
+            resultsSection.innerHTML = '';
+            
+            const resultHtml = `
+                <div class="result-card">
+                    <div class="result-title">✅ POD Risolto</div>
+                    <div class="result-field">
+                        <span class="field-label">POD:</span>
+                        <span class="field-value">${escapeHtml(result.POD)}</span>
+                    </div>
+                    <div class="result-field">
+                        <span class="field-label">Cabina Primaria:</span>
+                        <span class="field-value">${escapeHtml(result['Cabina Primaria'])}</span>
+                    </div>
+                    <div class="result-field">
+                        <span class="field-label">Fornitore:</span>
+                        <span class="field-value">${escapeHtml(result.Fornitore)}</span>
+                    </div>
+                    <div class="result-field">
+                        <span class="field-label">Regioni:</span>
+                        <span class="field-value">${escapeHtml(result.Regioni)}</span>
+                    </div>
+                    <div class="result-field">
+                        <span class="field-label">Province:</span>
+                        <span class="field-value">${escapeHtml(result.Province)}</span>
+                    </div>
+                    <div class="result-field">
+                        <span class="field-label">Elenco Comuni Cabina Primaria:</span>
+                        <span class="field-value">${escapeHtml(result['Elenco Comuni Cabina Primaria'])}</span>
+                    </div>
+                </div>
+            `;
+            
+            resultsSection.innerHTML = resultHtml;
+        }
+
+        function showError(message) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.innerHTML = `<div class="error">❌ ${escapeHtml(message)}</div>`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        document.getElementById('podInput').addEventListener('input', function() {
+            if (this.value.trim()) {
+                clearValidationError();
+            }
+        });
+
+        document.getElementById('podInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                resolvePOD();
+            }
+        });
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBtn = document.getElementById('searchBtn');
+            searchBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
